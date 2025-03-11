@@ -35,9 +35,9 @@ def get_course_recommendations(skills, interests, department):
     Suggest 5 to 7 online courses for a student in {department} with skills in {skills} and interests in {interests}.
     Format the result in this EXACT format:
 
-    1. [Course Name](https://example.com)  
-    2. [Course Name](https://example.com)  
-    3. [Course Name](https://example.com)  
+    1. Course Name (Platform: https://example.com)  
+    2. Course Name (Platform: https://example.com)  
+    3. Course Name (Platform: https://example.com)  
 
     Make sure to include valid, real course links from Coursera, Udemy, edX, and Swayam.
     Do not provide search suggestions — provide direct links only.
@@ -48,31 +48,33 @@ def get_course_recommendations(skills, interests, department):
         print("RAW RESPONSE:", response.text)
 
         courses = []
-        pattern = r"\[([^\]]+)\]\((https?://[^\)]+)\)"
+        # ✅ Updated regex to capture all platforms correctly
+        pattern = r"(.+?) \((Coursera|Udemy|edX|Swayam): (https?://[^\)]+)\)"
         matches = re.findall(pattern, response.text)
 
         for match in matches:
-            course = {"name": match[0], "link": match[1]}
+            course = {"name": match[0], "platform": match[1], "link": match[2]}
             courses.append(course)
 
-        # 🔥 Fallback: If no URLs found, generate platform search links
-        if not courses:
-            print("No direct links found — using fallback search...")
-            fallback_courses = extract_course_names(response.text)
-            courses = generate_fallback_links(fallback_courses)
+        # ✅ Format the output properly
+        formatted_courses = []
+        for course in courses[:7]:
+            formatted_courses.append({
+                "name": f"{course['name']} ({course['platform']})",
+                "link": course["link"]
+            })
 
-        return courses[:7]  # Return top 5-7 courses
+        return formatted_courses
     except Exception as e:
         print(f"Error: {e}")
         return [{"name": "Failed to fetch courses", "link": "#"}]
 
-# Fallback 1: Extract Course Names Using Regex
 def extract_course_names(text):
     pattern = r"^\d+\.\s+(.+)$"
     matches = re.findall(pattern, text, re.MULTILINE)
     return matches
 
-# Fallback 2: Generate Search Links
+# Fallback 2: Generate Search Links (Now with platform names)
 def generate_fallback_links(course_names):
     platforms = {
         "Coursera": "https://www.coursera.org/search?query=",
@@ -83,13 +85,27 @@ def generate_fallback_links(course_names):
 
     courses = []
     for course in course_names:
-        # Pick a random platform link
         for platform, url in platforms.items():
             search_link = f"{url}{course.replace(' ', '+')}"
             courses.append({"name": f"{course} ({platform})", "link": search_link})
             break
 
     return courses
+
+# New Function: Identify Platform Name from URL
+def get_platform_name(link):
+    if "coursera.org" in link:
+        return "Coursera"
+    elif "udemy.com" in link:
+        return "Udemy"
+    elif "edx.org" in link:
+        return "edX"
+    elif "swayam.gov.in" in link:
+        return "Swayam"
+    else:
+        return "Other"
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

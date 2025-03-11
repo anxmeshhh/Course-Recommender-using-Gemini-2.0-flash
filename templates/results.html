@@ -12,7 +12,11 @@
         {% if recommendations %}
             {% for course in recommendations %}
                 <div class="course-card">
-                    <a href="{{ course.link }}" target="_blank">{{ course.name }}</a>
+                    <div class="course-title">{{ course.name.split('(')[0].strip() }}</div>
+                    <div class="course-details">
+                        Platform: <strong>{{ course.name.split('(')[-1].replace(')', '') }}</strong>  
+                        <a href="{{ course.link }}" target="_blank" class="course-link">🔗 Visit Course</a>
+                    </div>
                 </div>
             {% endfor %}
         {% else %}
